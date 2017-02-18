@@ -1,33 +1,38 @@
 # -*- coding:utf-8 -*-
 # lambda_function.py
 import boto3
+from bs4 import BeautifulSoup
+from urllib2 import urlopen
+from urllib2 import URLError
+from urllib2 import HTTPError
 
 AWS_S3_BUCKET_NAME = 'geo.list.html'
+
+
+def get_web_resource(url):
+  try:
+    return urlopen(url)
+  except HTTPError as e:
+    print e
+  except URLError as e:
+    print 'The server could not be found!'
+  return None
+
 
 def lambda_handler(event, context):
   s3_client = boto3.resource('s3')
   bucket = s3_client.Bucket(AWS_S3_BUCKET_NAME)
   print bucket.name
 
-  # list
-  # 階層を作ると、一番最下層までファイルを読み出してくれる
-  for object in bucket.objects.all():
-    print object.key
+  # url = 'http://www.yahoo.co.jp'
+  # resource = get_web_resource(url)
+  # html_resource = resource.read()
 
   # upload
-  # bucket.upload_file('./event.json', 'event.json')
-  # ディレクトリを追記したら、一緒に追加された
-  bucket.upload_file('./event.json', 'test/event.json')
-  # 存在するディレクトリを追記したままでも上書きされず、ファイルだけが追加される
-  bucket.upload_file('./event.json', 'test/event2.json')
-  bucket.upload_file('./event.json', 'test/test2/event.json')
+  # bucket.put_object(Key='test/www.yahoo.co.jp.html', Body=html_resource)
 
-  # download
-  # bucket.download_file('event.json', 'event2.json')
-
-  # delete
-  # 階層が存在しても削除することができる
   for object in bucket.objects.all():
-    object.delete()
+    html_object = object.get()['Body'].read()
+    print html_object.decode('utf-8')
 
   return
